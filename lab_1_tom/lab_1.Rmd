@@ -65,9 +65,66 @@ blackwood_acacia_df <- sf_trees %>%
   select(legal_status, date, lat = latitude, lon = longitude)
 ```
 
-### Make a graph of locations
+Make a graph of locations
 ```{r}
 ggplot(data = blackwood_acacia_df, aes(x = lon, y = lat)) +
   geom_point(color = 'darkgreen')
+```
+
+**Example 4:** `tidyr::separate()`
+```{r}
+sf_trees_sep <- sf_trees %>% 
+  separate(species, into = c('spp_scientific',
+                             'spp_common'),
+           sep = ' :: ')
+```
+
+**Example 5:** `tidyr::unite()`
+```{r}
+ex_5 <- sf_trees %>% 
+  unite('id_status', tree_id, legal_status, sep = ' ')
+```
+
+### Part 2: Make some maps
+
+Convert lat/long data to spatial points, `sf::st_as_sf()`
+```{r}
+blackwood_acacia_sf <- blackwood_acacia_df %>% 
+  drop_na(lat, lon) %>% 
+  st_as_sf(coords = c('lon', 'lat'))
+
+# Tell R coordinate reference system
+st_crs(blackwood_acacia_sf) <- 4326
+
+ggplot(data = blackwood_acacia_sf) +
+  geom_sf(color = 'dark green') +
+  theme_minimal()
+``` 
+
+Read in SF shapefile and add to map
+```{r}
+sf_map <- read_sf(here('data', 'sf_map', 'tl_2017_06075_roads.shp'))
+
+sf_map_transform <- st_transform(sf_map, 4326)
+
+ggplot(data = sf_map_transform) +
+  geom_sf()
+```
+
+Combine maps
+```{r}
+ggplot() +
+  geom_sf(data = sf_map, size = 0.1, color = 'darkgrey') +
+  geom_sf(data = blackwood_acacia_sf, size = 0.5, color = 'red') +
+  theme_void() +
+  labs(title = 'Blackwood Acacia Trees in SF')
+```
+
+### Interactive Map
+```{r}
+tmap_mode('view')
+
+tm_shape(blackwood_acacia_sf) +
+  tm_dots()
 ```
 
