@@ -1,0 +1,73 @@
+---
+title: "ESM 244 Lab 1"
+author: "Taylor Medina"
+date: "1/5/2022"
+output: html_document
+---
+
+```{r setup, warning = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(here)
+library(sf)
+library(tmap)
+```
+
+### Reading in data
+```{r}
+sf_trees <- read_csv(here("data", "sf_trees", "sf_trees.csv"))
+```
+
+### Part 1: Wrangling and ggplot review
+
+**Example 1:** Find count of observations by `legal_status` and wrangle data
+
+```{r}
+# Method 1
+sf_trees %>% 
+  group_by(legal_status) %>% 
+  summarize(tree_count = n())
+
+# Method 2
+top_5_status <- sf_trees %>% 
+  count(legal_status) %>% 
+  drop_na(legal_status) %>% 
+  rename(tree_count = n) %>% 
+  relocate(tree_count) %>%  
+  slice_max(tree_count, n = 5) %>% 
+  arrange(-tree_count)
+```
+
+Make a graph of top 5 from above:
+```{r}
+ggplot(data = top_5_status, aes(
+  x = fct_reorder(legal_status, tree_count), y = tree_count)) +
+  geom_col(fill = 'darkgreen') +
+  labs(x = 'legal status',
+       y = 'tree counts') +
+  coord_flip() +
+  theme_minimal()
+```
+
+**Example 2:** Only going to keep observations where legal status is 'Permitted Site' and caretaker is 'MTA'
+
+```{r}
+permitted_data_sf <- sf_trees %>% 
+  filter(legal_status == 'Permitted Site', caretaker == 'MTA')
+```
+
+**Example 3:** Only keep blackwood acacia trees and only keep columns `legal_status`, `date`, `latitude`, and `longitude`.
+
+```{r}
+blackwood_acacia_df <- sf_trees %>%
+  filter(str_detect(species, 'Blackwood Acacia')) %>%
+  select(legal_status, date, lat = latitude, lon = longitude)
+```
+
+### Make a graph of locations
+```{r}
+ggplot(data = blackwood_acacia_df, aes(x = lon, y = lat)) +
+  geom_point(color = 'darkgreen')
+```
+
